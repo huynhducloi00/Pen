@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run main program",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/Pen",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--SAVE_NUM",
+                "0821",
+                "--SEED",
+                "1111",
+                "--DATASET",
+                "harm",
+                "--LR_RATE",
+                "3e-5",
+                "--CL_RATE",
+                "0.3",
+                "--CL_LABEL_RATE",
+                "0.3",
+                "--FIX_LAYERS",
+                "0",
+                "--EPOCHS",
+                "10",
+                "--CUDA_DEVICE",
+                "0",
+                "--ADD_LENGTH",
+                "28",
+                "--LENGTH",
+                "64",
+                "--TOTAL_LENGTH",
+                "256",
+                "--CAP_TYPE",
+                "origin"
+            ]
+        }
+    ]
+}

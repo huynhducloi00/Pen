@@ -1,3 +1,7 @@
+from real_utils import set_env
+
+
+set_env(level=3)
 import torch
 import numpy as np
 import random

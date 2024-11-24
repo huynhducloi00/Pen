@@ -2,6 +2,7 @@ import os
 import time 
 import torch
 import torch.nn as nn
+from tqdm import tqdm, trange
 import utils
 import torch.nn.functional as F
 import config
@@ -76,8 +77,9 @@ def train_for_epoch(opt,model,train_loader,test_loader):
     log_path=os.path.join(opt.DATASET)
     if os.path.exists(log_path)==False:
         os.mkdir(log_path)
-    logger=utils.Logger(os.path.join(log_path,str(opt.SAVE_NUM)+'.txt'))  
-    log_hyperpara(logger,opt)
+    path=os.path.join(log_path,str(opt.SAVE_NUM)+'.txt')
+    logger=utils.Logger(path)  
+    # log_hyperpara(logger,opt)
     logger.write('Length of training set: %d, length of testing set: %d' %
                  (len(train_loader.dataset),len(test_loader.dataset)))
     
@@ -177,12 +179,12 @@ def train_for_epoch(opt,model,train_loader,test_loader):
     record_acc=[]
     record_macro_f1=[]
     record_micro_f1=[]
-    for epoch in range(opt.EPOCHS):
+    for epoch in trange(opt.EPOCHS):
         model.train(True)
         total_loss=0.0
         scores=0.0
-        for i,batch in enumerate(train_loader):
-            #break
+        pbar=tqdm(enumerate(train_loader),total=len(train_loader), leave=False)
+        for _,batch in pbar:
             cap=batch['cap_tokens'].long().cuda()
             label=batch['label'].float().cuda().view(-1,1)
             mask=batch['mask'].cuda()
@@ -191,16 +193,6 @@ def train_for_epoch(opt,model,train_loader,test_loader):
             mask_pos=batch['mask_pos'].cuda()
             label_0_pos=batch['label_0_pos'].cuda()
             label_1_pos=batch['label_1_pos'].cuda()
-            # CL PROCESS
-            # features = model(cap,mask,mask_pos,feat,cl_forward=True) # bsz, 1024
-            # features = features.unsqueeze(1) # bsz,1,1024
-            # cl_loss = SupConLoss()(features, label, None)
-            # cl_optim.zero_grad()
-            # cl_loss.backward()
-            # cl_optim.step()
-            # cl_optim.zero_grad()
-            # print('Epoch:', epoch, 'Iteration:', i, cl_loss.item())
-            # normal, label_feature for contrast mask and label
             logits, features, label_feature = model(cap,mask,mask_pos,feat,label_0_pos,label_1_pos)
             features = features.unsqueeze(1)  # bsz,1,1024
             cl_loss = SupConLoss(margin=opt.MARGIN)(features, label, None)
@@ -211,11 +203,10 @@ def train_for_epoch(opt,model,train_loader,test_loader):
                 loss = loss + opt.CL_RATE * cl_loss
             else:
                 loss = loss + opt.CL_RATE * cl_loss + opt.CL_LABEL_RATE*label_loss
-            #print (logits,target)
             batch_score=compute_score(logits,target)
             scores+=batch_score
-            
-            print ('Epoch:',epoch,'Iteration:', i, loss.item(),batch_score)
+            status=f"Loss: {loss.item():.2f} Score: {batch_score:.2f}"
+            pbar.set_postfix_str(status)
             loss.backward()
             optim.step()
             scheduler.step()
